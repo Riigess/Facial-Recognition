@@ -1,5 +1,6 @@
 #include <iostream>
-#include <opencv4/opencv2/dnn.hpp>
+// #include <opencv4/opencv2/dnn.hpp>
+#include <opencv2/dnn/dnn.hpp>
 #include <opencv2/opencv.hpp>
 
 #ifndef VISUALS_FACEDETECTOR_H
@@ -20,6 +21,6 @@ class FaceDetector {
         const int input_image_height_;
         const double scale_factor_;
         const cv::Scalar mean_values_;
-        cont float confidence_threshold_;
-}
+        const float confidence_threshold_;
+};
 #endif //VISUALS_FACEDETECTOR_H
