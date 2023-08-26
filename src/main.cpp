@@ -1,4 +1,5 @@
 #include "../include/main.hpp"
+#include <iostream>
 
 FaceDetector::FaceDetector() :
     confidence_threshold_(0.5),
@@ -42,28 +43,57 @@ std::vector<cv::Rect> FaceDetector::detect_face_rectangles(const cv::Mat &frame)
     return faces;
 }
 
-int main() {
+int main(int argc, char **argv) {
+    std::cout << "You have entered " << argc << " arguments:" << std::endl;
+    bool isFaceDetection = false;
+    bool isShowLines = false;
+    for(int i = 0; i < argc; i++) {
+        std::cout << "\t" << argv[i] << std::endl;
+        if(strcmp(argv[i], "--face-detection") == 0) {
+            isFaceDetection = true;
+        }
+        if(strcmp(argv[i], "--show-lines") == 0) {
+            isShowLines = true;
+        }
+    }
+
     cv::VideoCapture vCap;
     if(!vCap.open(0)) {
         return 0;
     }
-    FaceDetector face_detector;
-    //Create Mat to hold the frame and display it (in an infinite loop)
-    cv::Mat frame;
-    while(true) {
-        vCap >> frame;
-        
-        auto rectangles = face_detector.detect_face_rectangles(frame);
-        cv::Scalar color(0,105,205);
-        int frame_thickness = 4;
-        for(const auto & r : rectangles) {
-            cv::rectangle(frame, r, color, frame_thickness);
+    if(isFaceDetection) {
+        FaceDetector face_detector;
+        //Create Mat to hold the frame and display it (in an infinite loop)
+        cv::Mat frame;
+        while(true) {
+            vCap >> frame;
+            
+            auto rectangles = face_detector.detect_face_rectangles(frame);
+            cv::Scalar color(0,105,205);
+            int frame_thickness = 4;
+            for(const auto & r : rectangles) {
+                cv::rectangle(frame, r, color, frame_thickness);
+            }
+            cv::imshow("Image", frame);
+            const int esc_key = 27;
+            if(cv::waitKey(10) == esc_key) {
+                break;
+            }
         }
-        imshow("Image", frame);
-        const int esc_key = 27;
-        if(cv::waitKey(10) == esc_key) {
-            break;
+    } else if(isShowLines) {
+        cv::Mat frame, edges;
+        cv::namedWindow("edges", cv::WINDOW_AUTOSIZE);
+
+        for(;;) {
+            vCap >> frame;
+            cv::cvtColor(frame, edges, cv::COLOR_BGR2GRAY);
+            cv::GaussianBlur(edges, edges, cv::Size(7,7), 1.5, 1.5);
+            cv::Canny(edges, edges, 0, 30, 3);
+            cv::imshow("edges", edges);
+            if(cv::waitKey(30) >= 0) break;
         }
+    } else {
+        std::cout << "No options selected. Please add an option and try again." << std::endl;
     }
     cv::destroyAllWindows();
     vCap.release();
