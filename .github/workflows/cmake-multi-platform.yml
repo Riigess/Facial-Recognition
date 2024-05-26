@@ -54,7 +54,8 @@ jobs:
             cc: "clang",
             cxx: "clang++",
             archiver: "7za a",
-            generators: "Ninja"
+            generators: "Ninja",
+            uses: maxim-lobanov/setup-xcode@v1
           }
 
     steps:
@@ -75,7 +76,7 @@ jobs:
         key: ${{ runner.os }}-opencv-cache
     
     - name: Install OpenCV
-      uses: rayandrew/with-opencv-action@v1
+      uses: riigess/github-opencv-action@alpha
       with:
         dir: ./opencv-install
         cached: ${{ steps.opencv-cache.outputs.cache-hit }}
