@@ -76,7 +76,7 @@ jobs:
         key: ${{ runner.os }}-opencv-cache
     
     - name: Install OpenCV
-      uses: riigess/github-opencv-action@v0.0.2
+      uses: riigess/github-opencv-action@v0.0.3
       with:
         dir: ./opencv-install
         cached: ${{ steps.opencv-cache.outputs.cache-hit }}
