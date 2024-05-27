@@ -52,7 +52,7 @@ jobs:
           sudo apt update;
           sudo apt remove x264 libx264-dev -y;
           sudo apt install build-essential checkinstall cmake pkg-config yasm -y;
-          udo apt install git gfortran libjpeg8-dev libjasper1 libjasper-dev libpng-dev -y;
+          sudo apt install git gfortran libjpeg8-dev libjasper1 libjasper-dev libpng-dev -y;
           sudo apt install libavcodec-dev libavformat-dev libswscale-dev libdc1394-22-dev -y;
           sudo apt install libxine2-dev libv4l-dev -y;
           sudo apt install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev -y;
@@ -64,7 +64,8 @@ jobs:
           sudo apt install opencv -y;
         fi;
     - name: Echo out Present working directory
-      run: echo "Currently working in $(pwd)"
+      continue-on-error: true
+      run: echo "Currently working in $(pwd)"; for file in /Users/runner/work/Facial-Recognition/Facial-Recognition/build/; do echo "Found file in /Users/runner/work/Facial-Recognition/Facial-Recognition/build/$(file)"; done;
     - name: Build Project
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -81,7 +82,7 @@ jobs:
         echo "Configuring for $(RUNNER_OS) [$(uname)].";
         if [[ "$(gh release view $tag 2>&1)" == "release not found" ]]; then
           echo "Release not found. Creating release.";
-          gh release create "$tag" --repo="$GITHUB_REPOSITORY" --title="$(tag#v)" --generate-notes build/FaceDetection-"$(uname)";
+          gh release create "$tag" --repo="$GITHUB_REPOSITORY" --title="$(tag#v)" --generate-notes ./build/FaceDetection-"$(uname)";
         else
           echo "Release found. Appending files to release.";
           gh release upload "$tag" build/FaceDetection-"$(uname)";
