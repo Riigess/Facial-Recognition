@@ -49,8 +49,6 @@ jobs:
           brew install opencv;
         fi;
         if [[ "$(uname)" == "Linux" ]]; then
-          sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 605C66F00D6C9793 0E98404D386FA1D9 648ACFD622F3D138;
-          sudo add-apt-repository "deb http://security.ubuntu.com/ubuntu xenial-security main";
           sudo apt update;
           sudo apt remove x264 libx264-dev -y;
           sudo apt install build-essential checkinstall cmake pkg-config yasm -y;
@@ -65,6 +63,8 @@ jobs:
           sudo apt install x264 v4l-utils clang g++ unzip -y;
           sudo apt install opencv -y;
         fi;
+    - name: Echo out Present working directory
+      run: echo "Currently working in $(pwd)"
     - name: Build Project
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
