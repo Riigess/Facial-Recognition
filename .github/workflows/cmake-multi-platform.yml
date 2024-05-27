@@ -50,22 +50,15 @@ jobs:
         fi;
         if [[ "$(uname)" == "Linux" ]]; then
           sudo apt update;
-          sudo apt remove x264 libx264-dev -y;
-          sudo apt install build-essential checkinstall cmake pkg-config yasm -y;
-          sudo apt install git gfortran libjpeg8-dev libjasper1 libjasper-dev libpng-dev -y;
-          sudo apt install libavcodec-dev libavformat-dev libswscale-dev libdc1394-22-dev -y;
-          sudo apt install libxine2-dev libv4l-dev -y;
-          sudo apt install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev -y;
-          sudo apt install libatlas-base-dev -y;
-          sudo apt install libfaac-dev libmp3lame-dev libtheora-dev -y;
-          sudo apt install libvorbis-dev libxvidcore-dev -y;
-          sudo apt install libopencore-amrnb-dev libopencore-amrwb-dev -y;
-          sudo apt install x264 v4l-utils clang g++ unzip -y;
-          sudo apt install opencv -y;
+          sudo apt install libopencv-dev -y;
         fi;
     - name: Echo out Present working directory
       continue-on-error: true
-      run: echo "Currently working in $(pwd)"; for file in /Users/runner/work/Facial-Recognition/Facial-Recognition/build/; do echo "Found file in /Users/runner/work/Facial-Recognition/Facial-Recognition/build/$(file)"; done;
+      run:
+        echo "Currently working in $(pwd)";
+        for filename in /Users/runner/work/Facial-Recognition/Facial-Recognition/build/*; do
+          echo "Found file in /Users/runner/work/Facial-Recognition/Facial-Recognition/build/$(filename)";
+        done;
     - name: Build Project
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
