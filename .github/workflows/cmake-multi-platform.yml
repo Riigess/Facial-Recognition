@@ -65,7 +65,15 @@ jobs:
       run:
         mkdir build;
         cmake CMakeLists.txt -S src -B build;
-        mv build/FaceDetection build/FaceDetection-"$(uname)"
+        if [ -f build/FaceDetection ]; then
+          echo "FaceDetection built. Changing filename..";
+          mv build/FaceDetection build/FaceDetection-"$(uname)";
+        else
+          cd build;
+          make;
+          mv FaceDetection FaceDetection-"$(uname)";
+          cd ..;
+        fi;
     - name: Publish Release to Tag
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -75,7 +83,7 @@ jobs:
         echo "Configuring for $(RUNNER_OS) [$(uname)].";
         if [[ "$(gh release view $tag 2>&1)" == "release not found" ]]; then
           echo "Release not found. Creating release.";
-          gh release create "$tag" --repo="$GITHUB_REPOSITORY" --title="$(tag#v)" --generate-notes ./build/FaceDetection-"$(uname)";
+          gh release create "$tag" --repo="$GITHUB_REPOSITORY" --title="$(tag#v)" --generate-notes build/FaceDetection-"$(uname)";
         else
           echo "Release found. Appending files to release.";
           gh release upload "$tag" build/FaceDetection-"$(uname)";
