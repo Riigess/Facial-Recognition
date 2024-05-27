@@ -4,14 +4,16 @@ name: CMake on multiple platforms
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    tags:
+    - '*'
+
+permissions:
+  contents: write
 
 jobs:
   build:
+    name: Release pushed tag
     runs-on: ${{ matrix.config.os }}
-
     strategy:
       fail-fast: false
       matrix:
@@ -20,84 +22,65 @@ jobs:
         # c_compiler: [gcc, clang, cl]
         config:
           - {
-            name: "Windows Latest MSVC",
-            os: windows-latest,
-            artifact: "windows_msvc.7z",
-            cc: "cl",
-            cxx: "cl",
-            archiver: "7z a",
-            generators: "Visual Studio 16 2019"
-          }
-          - {
-            name: "Windows Latest MSVC",
-            os: windows-latest,
-            artifact: "windows_mingw.7z",
-            cc: "cl",
-            cxx: "cl",
-            archiver: "7z a",
-            generators: "Ninja"
-          }
-          - {
-            name: "Ubuntu Latest DEB",
+            name: "Ubuntu Latest",
             os: ubuntu-latest,
-            artifact: "ubuntu_gcc.7z",
-            build_type: "Release",
             cc: "clang",
             cxx: "clang++",
             generators: "Ninja"
           }
           - {
-            name: "MacOS Latest Clang",
+            name: "MacOS Latest",
             os: macos-latest,
-            artifact: "macos_clang.7z",
-            build_type: "Release",
             cc: "clang",
             cxx: "clang++",
-            archiver: "7za a",
-            generators: "Ninja",
             uses: maxim-lobanov/setup-xcode@v1
           }
 
     steps:
     - uses: actions/checkout@v4
-
-    - name: Set reusable strings
-      # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
-      id: strings
-      shell: bash
-      run: |
-        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
-
-    - name: Cache OpenCV
-      id: opencv-cache
-      uses: actions/cache@v4
-      with:
-        path: ./opencv-install
-        key: ${{ runner.os }}-opencv-cache
-    
     - name: Install OpenCV
-      uses: riigess/github-opencv-action@v0.0.4
-      with:
-        dir: ./opencv-install
-        cached: ${{ steps.opencv-cache.outputs.cache-hit }}
-        opencv-version: '4.0.0'
-
-    - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: >
-        cmake -B ${{ steps.strings.outputs.build-output-dir }}
-        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
-        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
-        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -S ${{ github.workspace }}/src
-
-    - name: Build
-      # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
-      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
-
-#    - name: Test
-#      working-directory: ${{ steps.strings.outputs.build-output-dir }}
-#      # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
-#      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-#      run: ctest --build-config ${{ matrix.build_type }}
+      env:
+        OPENCV_VERSION: '4.9.0'
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run:
+        if [[ "$(uname)" == *"Darwin"* ]]; then
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)";
+          eval "$(/opt/homebrew/bin/brew shellenv)";
+          brew install opencv;
+        fi;
+        if [[ "$(uname)" == "Linux" ]]; then
+          sudo add-apt-repository "deb http://security.ubuntu.com/ubuntu xenial-security main";
+          sudo apt update;
+          sudo apt remove x264 libx264-dev -y;
+          sudo apt install build-essential checkinstall cmake pkg-config yasm -y;
+          udo apt install git gfortran libjpeg8-dev libjasper1 libjasper-dev libpng-dev -y;
+          sudo apt install libavcodec-dev libavformat-dev libswscale-dev libdc1394-22-dev -y;
+          sudo apt install libxine2-dev libv4l-dev -y;
+          sudo apt install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev -y;
+          sudo apt install libatlas-base-dev -y;
+          sudo apt install libfaac-dev libmp3lame-dev libtheora-dev -y;
+          sudo apt install libvorbis-dev libxvidcore-dev -y;
+          sudo apt install libopencore-amrnb-dev libopencore-amrwb-dev -y;
+          sudo apt install x264 v4l-utils clang g++ unzip -y;
+          sudo apt install opencv -y;
+        fi;
+    - name: Build Project
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run:
+        make;
+        mv build/FaceDetection build/FaceDetection-"$(uname)"
+    - name: Publish Release to Tag
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        tag: ${{ github.ref_name }}
+        RUNNER_OS: ${{ github.runner_os }}
+      run:
+        echo "Configuring for $(RUNNER_OS) [$(uname)].";
+        if [[ "$(gh release view $tag 2>&1)" == "release not found" ]]; then
+          echo "Release not found. Creating release.";
+          gh release create "$tag" --repo="$GITHUB_REPOSITORY" --title="$(tag#v)" --generate-notes build/FaceDetection-"$(uname)";
+        else
+          echo "Release found. Appending files to release.";
+          gh release upload "$tag" build/FaceDetection-"$(uname)";
+        fi;
